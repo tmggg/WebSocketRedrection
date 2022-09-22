@@ -1,0 +1,10 @@
+C:\Users\Administrator\source\repos\WebSocketRedrection\bin\Debug\WebSocketRedrection.exe.config
+C:\Users\Administrator\source\repos\WebSocketRedrection\bin\Debug\WebSocketRedrection.exe
+C:\Users\Administrator\source\repos\WebSocketRedrection\bin\Debug\WebSocketRedrection.pdb
+C:\Users\Administrator\source\repos\WebSocketRedrection\obj\Debug\WebSocketRedrection.csproj.AssemblyReference.cache
+C:\Users\Administrator\source\repos\WebSocketRedrection\obj\Debug\WebSocketRedrection.csproj.CoreCompileInputs.cache
+C:\Users\Administrator\source\repos\WebSocketRedrection\obj\Debug\WebSocketRedrection.csproj.CopyComplete
+C:\Users\Administrator\source\repos\WebSocketRedrection\obj\Debug\WebSocketRedrection.exe
+C:\Users\Administrator\source\repos\WebSocketRedrection\obj\Debug\WebSocketRedrection.pdb
+C:\Users\Administrator\source\repos\WebSocketRedrection\bin\Debug\websocket-sharp.dll
+C:\Users\Administrator\source\repos\WebSocketRedrection\bin\Debug\websocket-sharp.xml
