@@ -1,0 +1,10 @@
+[Bb]in/
+[Oo]bj/
+.idea
+nupkgs
+/.vs/Authing.ApiClient/DesignTimeBuild/.dtbcache.v2
+/.vs/Authing.ApiClient/v16/.suo
+/.vs/Authing.ApiClient/v16/TestStore/0/017.testlog
+/.vs/Authing.ApiClient/v16/TestStore/0/testlog.manifest
+/.vs
+Test/Authing.ApiClient.Test.Base/TestBase.cs
