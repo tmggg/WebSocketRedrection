@@ -85,7 +85,7 @@ namespace WebSocketRedrection
         {
             RemoteClient.OnMessage += RemoteClientOnOnMessage;
             RemoteClient.OnError += RemoteClientOnOnError;
-            RemoteClient.OnOpen += (sender, args) => Console.WriteLine("远程连接已建立！");
+            RemoteClient.OnOpen += (sender, args) => Console.WriteLine("远程 WebSocket 连接已建立！");
             do
             {
                 RemoteClient.Connect();
@@ -94,7 +94,7 @@ namespace WebSocketRedrection
             RemoteClient.OnClose += RemoteClientOnOnClose;
             if (LocalClient.Connected)
             {
-                Console.WriteLine("本地连接已建立！");
+                Console.WriteLine("本地 TCP 连接已建立！");
                 sendThread.Start();
             }
         }
@@ -166,7 +166,7 @@ namespace WebSocketRedrection
                 catch (Exception e)
                 {
                     Console.WriteLine(e);
-                    Console.WriteLine("远程连接丢失，尝试重连！");
+                    Console.WriteLine("远程 Websocket 连接，尝试重连！");
                     Try2Reconnect();
                 }
             }
@@ -199,7 +199,7 @@ namespace WebSocketRedrection
             if (RemoteClient.IsAlive)
             {
                 ReconnectLocalClient();
-                Console.WriteLine("重连成功！");
+                Console.WriteLine("双向重连成功！");
                 RemoteClient.OnClose += RemoteClientOnOnClose;
             }
         }
@@ -248,8 +248,8 @@ namespace WebSocketRedrection
                             catch (Exception exception)
                             {
                                 Console.WriteLine(exception);
-                                Console.WriteLine("本地连接出现错误，尝试重连！");
-                                Try2Reconnect(e.RawData);
+                                Console.WriteLine("向 Windows Server 写入数据时出现错误，尝试重连！");
+                                Try2Reconnect();
                             }
                         }
 
@@ -258,7 +258,7 @@ namespace WebSocketRedrection
                 catch (Exception exception)
                 {
                     Console.WriteLine(exception);
-                    Console.WriteLine("本地连接出现错误，尝试重连！");
+                    Console.WriteLine("Windows Server 转发时出现错误，尝试重连！");
                     Try2Reconnect();
                 }
             }
@@ -267,36 +267,36 @@ namespace WebSocketRedrection
         /// <summary>
         /// 重新连接所有客户端
         /// </summary>
-        private void Try2Reconnect(byte[] data = null)
+        private void Try2Reconnect()
         {
             lock (LocalClient)
             {
-                Console.WriteLine("准备重建本地连接");
-                ReconnectLocalClient();
-                if (data != null)
-                {
-                    var stream = LocalClient.GetStream();
-                    if (stream.CanWrite)
-                    {
-                        lock (stream)
-                        {
-                            try
-                            {
-                                stream.Write(data, 0, data.Length);
-                                Console.WriteLine($"Get Data Lenth From WebSocket: {data.Length} - {DateTime.Now}");
-                            }
-                            catch (Exception exception)
-                            {
-                                Console.WriteLine(exception);
-                                Console.WriteLine("本地连接出现错误，尝试重连！");
-                                Try2Reconnect(data);
-                            }
-                        }
+                //Console.WriteLine("准备重建本地连接");
+                //ReconnectLocalClient();
+                //if (data != null)
+                //{
+                //    var stream = LocalClient.GetStream();
+                //    if (stream.CanWrite)
+                //    {
+                //        lock (stream)
+                //        {
+                //            try
+                //            {
+                //                stream.Write(data, 0, data.Length);
+                //                Console.WriteLine($"Get Data Lenth From WebSocket: {data.Length} - {DateTime.Now}");
+                //            }
+                //            catch (Exception exception)
+                //            {
+                //                Console.WriteLine(exception);
+                //                Console.WriteLine("本地连接出现错误，尝试重连！");
+                //                Try2Reconnect(data);
+                //            }
+                //        }
 
-                    }
-                }
-                // Console.WriteLine("关闭远程连接！");
-                // RemoteClient.Close();
+                //    }
+                //}
+                Console.WriteLine("关闭远程 Websocket 连接！");
+                RemoteClient.Close();
             }
         }
 

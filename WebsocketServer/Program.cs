@@ -40,9 +40,9 @@ namespace WebsocketServer
             OnClose();
         }
 
-        private static void ReceiveData()
+        private static async void ReceiveData()
         {
-            client = _client.AcceptTcpClient();
+            client = await _client.AcceptTcpClientAsync();
             try
             {
                 while (client.Connected)
