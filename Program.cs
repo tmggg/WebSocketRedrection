@@ -249,7 +249,7 @@ namespace WebSocketRedrection
                             {
                                 Console.WriteLine(exception);
                                 Console.WriteLine("向 Windows Server 写入数据时出现错误，尝试重连！");
-                                Try2Reconnect();
+                                Try2Reconnect(e.RawData);
                             }
                         }
 
@@ -267,7 +267,7 @@ namespace WebSocketRedrection
         /// <summary>
         /// 重新连接所有客户端
         /// </summary>
-        private void Try2Reconnect()
+        private void Try2Reconnect(byte[] data = null)
         {
             lock (LocalClient)
             {
