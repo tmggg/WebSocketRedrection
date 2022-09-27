@@ -17,4 +17,3 @@ C:\Users\Administrator\Desktop\CompProject\GitHub\WebSocketRedrection\obj\Debug\
 C:\Users\Administrator\Desktop\CompProject\GitHub\WebSocketRedrection\obj\Debug\WebSocketRedrection.csproj.CopyComplete
 C:\Users\Administrator\Desktop\CompProject\GitHub\WebSocketRedrection\obj\Debug\WebSocketRedrection.exe
 C:\Users\Administrator\Desktop\CompProject\GitHub\WebSocketRedrection\obj\Debug\WebSocketRedrection.pdb
-C:\Users\Administrator\Desktop\CompProject\GitHub\WebSocketRedrection\obj\Debug\WebSocketRedrection.csproj.AssemblyReference.cache

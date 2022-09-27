@@ -13,7 +13,7 @@ namespace WebSocketRedrection
     {
         static async Task Main(string[] args)
         {
-            AuthigTransfer t = new AuthigTransfer("127.0.0.1", 8181, "10.0.0.15", 389);
+            AuthigTransfer t = new AuthigTransfer("192.168.111.244", 8181, "127.0.0.1", 389);
             //AuthigTransfer t = new AuthigTransfer("192.168.124.26", 8181, "10.0.0.15", 389);
             //进行远程与本地服务端口的连接操作
             t.Connnect();
