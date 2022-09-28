@@ -13,7 +13,7 @@ namespace WebSocketRedrection
     {
         static async Task Main(string[] args)
         {
-            AuthigTransfer t = new AuthigTransfer("192.168.111.244", 8181, "127.0.0.1", 389);
+            AuthigTransfer t = new AuthigTransfer("192.168.111.105", 8181, "127.0.0.1", 389);
             //AuthigTransfer t = new AuthigTransfer("192.168.124.26", 8181, "10.0.0.15", 389);
             //进行远程与本地服务端口的连接操作
             t.Connnect();
@@ -59,6 +59,10 @@ namespace WebSocketRedrection
         /// </summary>
         private bool ForceClose;
 
+        private Timer _sendTimeOut;
+
+        private Timer _recevieTimeOut;
+
         /// <summary>
         /// 构造函数
         /// </summary>
@@ -74,8 +78,37 @@ namespace WebSocketRedrection
             _localPort = localPort;
             LocalClient = new TcpClient();
             RemoteClient = new WebSocket($"ws://{_remoteHost}:{_remotePort}");
-            RemoteClient.WaitTime = TimeSpan.FromSeconds(60);
+            RemoteClient.WaitTime = TimeSpan.FromSeconds(30);
             sendThread = new Thread(SendData);
+        }
+
+        private void TimeOut(object state)
+        {
+            Try2Reconnect();
+        }
+
+        private void ResetTimer()
+        {
+            if (_sendTimeOut == null)
+                _sendTimeOut = new Timer(TimeOut, null, 30000, Timeout.Infinite);
+            else
+            {
+                _sendTimeOut.Dispose();
+                _sendTimeOut = null;
+            }
+        }
+
+        private void ResetReceiveTimer()
+        {
+            if (_recevieTimeOut == null)
+                //_recevieTimeOut = new Timer(TimeOut, null, 300000, Timeout.Infinite);
+                _recevieTimeOut = new Timer(TimeOut, null, 10000, Timeout.Infinite);
+            else
+            {
+                _recevieTimeOut.Dispose();
+                _recevieTimeOut = new Timer(TimeOut, null, 10000, Timeout.Infinite);
+            }
+
         }
 
         /// <summary>
@@ -95,7 +128,7 @@ namespace WebSocketRedrection
             if (LocalClient.Connected)
             {
                 Console.WriteLine("本地 TCP 连接已建立！");
-                sendThread.Start();
+                //sendThread.Start();
             }
         }
 
@@ -116,19 +149,6 @@ namespace WebSocketRedrection
                         Thread.Sleep(1);
                         continue;
                     }
-                    //if (stream.DataAvailable)
-                    //{
-                    //    lock (stream)
-                    //    {
-                    //        var buffer = new byte[1024];
-                    //        var count = stream.Read(buffer, 0, buffer.Length);
-                    //        if (count == 0)
-                    //        {
-                    //            ReconnectLocalClient();
-                    //            continue;
-                    //        }
-                    //    }
-                    //}
                     if (stream.DataAvailable)
                     {
                         lock (stream)
@@ -146,13 +166,21 @@ namespace WebSocketRedrection
                                 if (count >= 1024)
                                 {
                                     if (RemoteClient.IsAlive)
+                                    {
+                                        ResetTimer();
                                         RemoteClient.Send(buffer);
+                                        ResetTimer();
+                                    }
                                 }
                                 else
                                 {
                                     byte[] truebytes = buffer.Take(count).ToArray();
                                     if (RemoteClient.IsAlive)
+                                    {
+                                        ResetTimer();
                                         RemoteClient.Send(truebytes);
+                                        ResetTimer();
+                                    }
                                 }
                                 Console.WriteLine($"Get Data Lenth From AD: {count} - {DateTime.Now}");
                             } while (count >= 1024);
@@ -166,7 +194,7 @@ namespace WebSocketRedrection
                 catch (Exception e)
                 {
                     Console.WriteLine(e);
-                    Console.WriteLine("远程 Websocket 连接，尝试重连！");
+                    Console.WriteLine("远程 Websocket 连接错误，尝试重连！");
                     Try2Reconnect();
                 }
             }
@@ -179,7 +207,7 @@ namespace WebSocketRedrection
         /// <param name="e"></param>
         private void RemoteClientOnOnError(object sender, ErrorEventArgs e)
         {
-            RemoteClient.Close(500, "I Have Error");
+            RemoteClient.CloseAsync(500, "I Have Error");
         }
 
         /// <summary>
@@ -199,6 +227,8 @@ namespace WebSocketRedrection
             if (RemoteClient.IsAlive)
             {
                 ReconnectLocalClient();
+                if (!RemoteClient.IsAlive)
+                    RemoteClient.Connect();
                 Console.WriteLine("双向重连成功！");
                 RemoteClient.OnClose += RemoteClientOnOnClose;
             }
@@ -211,18 +241,23 @@ namespace WebSocketRedrection
         {
             lock (LocalClient)
             {
-                try
+                LocalClient.Close();
+                LocalClient = new TcpClient();
+
+                do
                 {
-                    LocalClient.Close();
-                    LocalClient = new TcpClient();
-                    LocalClient.Connect(_locaHost, _localPort);
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
-                }
+                    try
+                    {
+                        LocalClient.Connect(_locaHost, _localPort);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex);
+                    }
+                } while (!LocalClient.Connected);
             }
         }
+
 
         /// <summary>
         /// Websocket 客户端，消息到达事件响应
@@ -231,28 +266,87 @@ namespace WebSocketRedrection
         /// <param name="e"></param>
         private void RemoteClientOnOnMessage(object sender, MessageEventArgs e)
         {
+            ResetReceiveTimer();
             if (e.RawData.Length > 0)
             {
                 try
                 {
+                    //var stream = LocalClient.GetStream();
+                    //if (stream.CanWrite)
+                    //{
+                    //    lock (stream)
+                    //    {
+                    //        try
+                    //        {
+                    //            stream.Write(e.RawData, 0, e.RawData.Length);
+                    //            Console.WriteLine($"Get Data Lenth From WebSocket: {e.RawData.Length} - {DateTime.Now}");
+                    //        }
+                    //        catch (Exception exception)
+                    //        {
+                    //            Console.WriteLine(exception);
+                    //            Console.WriteLine("向 Windows Server 写入数据时出现错误，尝试重连！");
+                    //            Try2Reconnect();
+                    //        }
+                    //    }
+
+                    //}
                     var stream = LocalClient.GetStream();
                     if (stream.CanWrite)
                     {
-                        lock (stream)
+                        try
                         {
-                            try
+                            lock (stream)
                             {
                                 stream.Write(e.RawData, 0, e.RawData.Length);
-                                Console.WriteLine($"Get Data Lenth From WebSocket: {e.RawData.Length} - {DateTime.Now}");
                             }
-                            catch (Exception exception)
-                            {
-                                Console.WriteLine(exception);
-                                Console.WriteLine("向 Windows Server 写入数据时出现错误，尝试重连！");
-                                Try2Reconnect(e.RawData);
-                            }
+                            Console.WriteLine($"Get Data Lenth From WebSocket: {e.RawData.Length} - {DateTime.Now}");
                         }
-
+                        catch (Exception exception)
+                        {
+                            Console.WriteLine(exception);
+                            Console.WriteLine("向 Windows Server 写入数据时出现错误，尝试重连！");
+                            Try2Reconnect();
+                        }
+                        try
+                        {
+                            do
+                            {
+                                Thread.Sleep(1);
+                                stream = LocalClient.GetStream();
+                            } while (!stream.DataAvailable);
+                            int count;
+                            do
+                            {
+                                var buffer = new byte[1024];
+                                count = stream.Read(buffer, 0, buffer.Length);
+                                if (count >= 1024)
+                                {
+                                    if (RemoteClient.IsAlive)
+                                    {
+                                        ResetTimer();
+                                        RemoteClient.Send(buffer);
+                                        ResetTimer();
+                                    }
+                                }
+                                else
+                                {
+                                    byte[] truebytes = buffer.Take(count).ToArray();
+                                    if (RemoteClient.IsAlive)
+                                    {
+                                        ResetTimer();
+                                        RemoteClient.Send(truebytes);
+                                        ResetTimer();
+                                    }
+                                }
+                                Console.WriteLine($"Get Data Lenth From AD: {count} - {DateTime.Now}");
+                            } while (count >= 1024);
+                        }
+                        catch (Exception exception)
+                        {
+                            Console.WriteLine(exception);
+                            Console.WriteLine("向 WebSocket 写入数据时出现错误，尝试重连！");
+                            Try2Reconnect();
+                        }
                     }
                 }
                 catch (Exception exception)
@@ -267,7 +361,7 @@ namespace WebSocketRedrection
         /// <summary>
         /// 重新连接所有客户端
         /// </summary>
-        private void Try2Reconnect(byte[] data = null)
+        private void Try2Reconnect()
         {
             lock (LocalClient)
             {
@@ -296,7 +390,7 @@ namespace WebSocketRedrection
                 //    }
                 //}
                 Console.WriteLine("关闭远程 Websocket 连接！");
-                RemoteClient.Close();
+                RemoteClient.CloseAsync();
             }
         }
 
@@ -308,7 +402,7 @@ namespace WebSocketRedrection
             Console.WriteLine("等待安全退出。。。。。！");
             ForceClose = true;
             sendThread.Abort();
-            RemoteClient.Close();
+            RemoteClient.CloseAsync();
             LocalClient.Close();
         }
     }
