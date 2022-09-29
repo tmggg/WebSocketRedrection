@@ -118,7 +118,14 @@ namespace WebSocketRedrection
         {
             RemoteClient.OnMessage += RemoteClientOnOnMessage;
             RemoteClient.OnError += RemoteClientOnOnError;
-            RemoteClient.OnOpen += (sender, args) => Console.WriteLine("远程 WebSocket 连接已建立！");
+            RemoteClient.OnOpen += (sender, args) =>
+            {
+                Console.WriteLine("远程 WebSocket 连接已建立！");
+                _sendTimeOut?.Dispose();
+                _recevieTimeOut?.Dispose();
+                _sendTimeOut = null;
+                _recevieTimeOut = null;
+            };
             do
             {
                 RemoteClient.Connect();
