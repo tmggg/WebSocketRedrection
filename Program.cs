@@ -219,6 +219,7 @@ namespace WebSocketRedrection
         {
             if (ForceClose) return;
             RemoteClient.OnClose -= RemoteClientOnOnClose;
+            RemoteClient.OnMessage -= RemoteClientOnOnMessage;
             do
             {
                 RemoteClient.Connect();
@@ -231,6 +232,7 @@ namespace WebSocketRedrection
                     RemoteClient.Connect();
                 Console.WriteLine("双向重连成功！");
                 RemoteClient.OnClose += RemoteClientOnOnClose;
+                RemoteClient.OnMessage += RemoteClientOnOnMessage;
             }
         }
 
@@ -312,7 +314,9 @@ namespace WebSocketRedrection
                             do
                             {
                                 Thread.Sleep(1);
-                                stream = LocalClient.GetStream();
+                                if (LocalClient.Connected)
+                                    stream = LocalClient.GetStream();
+                                else return;
                             } while (!stream.DataAvailable);
                             int count;
                             do
