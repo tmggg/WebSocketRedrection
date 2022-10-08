@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Sockets;
 using System.Net.WebSockets;
@@ -13,7 +14,7 @@ namespace WebSocketRedrection
     {
         static async Task Main(string[] args)
         {
-            AuthigTransfer t = new AuthigTransfer("192.168.111.105", 8181, "127.0.0.1", 389);
+            AuthigTransfer t = new AuthigTransfer("192.168.111.222", 8181, "127.0.0.1", 389);
             //AuthigTransfer t = new AuthigTransfer("192.168.124.26", 8181, "10.0.0.15", 389);
             //进行远程与本地服务端口的连接操作
             t.Connnect();
@@ -78,7 +79,7 @@ namespace WebSocketRedrection
             _localPort = localPort;
             LocalClient = new TcpClient();
             RemoteClient = new WebSocket($"ws://{_remoteHost}:{_remotePort}");
-            RemoteClient.WaitTime = TimeSpan.FromSeconds(30);
+            RemoteClient.WaitTime = TimeSpan.FromSeconds(5);
             sendThread = new Thread(SendData);
         }
 
@@ -126,6 +127,7 @@ namespace WebSocketRedrection
                 _sendTimeOut = null;
                 _recevieTimeOut = null;
             };
+            //RemoteClient.Log.Output += LogRedrection;
             do
             {
                 RemoteClient.Connect();
@@ -138,6 +140,27 @@ namespace WebSocketRedrection
                 //sendThread.Start();
             }
         }
+
+        //private void LogRedrection(LogData log, string data)
+        //{
+        //    switch (log.Level)
+        //    {
+        //        case LogLevel.Info:
+        //            _eventLog?.WriteEntry(log.Message, EventLogEntryType.Information);
+        //            break;
+        //        case LogLevel.Warn:
+        //            _eventLog?.WriteEntry(log.Message, EventLogEntryType.Warning);
+        //            break;
+        //        case LogLevel.Error:
+        //        case LogLevel.Fatal:
+        //            _eventLog?.WriteEntry(log.Message, EventLogEntryType.Error);
+        //            break;
+        //        default:
+        //        case LogLevel.Trace:
+        //        case LogLevel.Debug:
+        //            break;
+        //    }
+        //}
 
         /// <summary>
         /// 循环检测数据流中是否存在数据，存在则一直发送给远端
