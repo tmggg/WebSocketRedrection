@@ -21,7 +21,7 @@ namespace WebsocketServer
         private static CancellationTokenSource token = new CancellationTokenSource();
         static void Main(string[] args)
         {
-            var server = new WebSocketServer("ws://0.0.0.0:8181");
+            var server = new WebSocketServer("ws://127.0.0.1:8181");
             server.Start(socket =>
             {
                 _server = socket;
@@ -30,7 +30,7 @@ namespace WebsocketServer
                 socket.OnMessage = OnMessage;
                 socket.OnBinary = OnBinary;
             });
-            _client = new TcpListener(IPAddress.Parse("127.0.0.1"), 389);
+            _client = new TcpListener(IPAddress.Parse("0.0.0.0"), 56565);
             _client.Start();
             _receiveThread = new Thread(ReceiveData);
             _receiveThread.Start();
@@ -57,9 +57,9 @@ namespace WebsocketServer
                             {
                                 do
                                 {
-                                    byte[] buffer = new byte[1024];
+                                    byte[] buffer = new byte[1024 * 512];
                                     count = stream.Read(buffer, 0, buffer.Length);
-                                    if (count >= 1024)
+                                    if (count >= 1024 * 512)
                                     {
                                         _server.Send(buffer).GetAwaiter().GetResult();
                                     }
@@ -116,7 +116,7 @@ namespace WebsocketServer
 
         private static void OnClose()
         {
-            Console.WriteLine("Close!");
+            Console.WriteLine($"{DateTime.Now} Close WebSocket");
             client?.Close();
             _receiveThread.Abort();
             if (!forceStop)
@@ -128,7 +128,7 @@ namespace WebsocketServer
 
         private static async void OnOpen()
         {
-            Console.WriteLine("open");
+            Console.WriteLine($"{DateTime.Now} Open WebSocket");
             //try
             //{
             //    await Task.Run(async () =>
