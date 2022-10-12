@@ -16,7 +16,7 @@ namespace WebsocketServer
         static IWebSocketConnection _server;
         static TcpListener _client;
         private static bool forceStop;
-        private static Thread _receiveThread;
+        private static Task _receiveTask;
         private static TcpClient client;
         private static CancellationTokenSource token = new CancellationTokenSource();
         static void Main(string[] args)
@@ -32,8 +32,8 @@ namespace WebsocketServer
             });
             _client = new TcpListener(IPAddress.Parse("0.0.0.0"), 56565);
             _client.Start();
-            _receiveThread = new Thread(ReceiveData);
-            _receiveThread.Start();
+            _receiveTask = new Task(ReceiveData,token.Token);
+            _receiveTask.Start();
             Console.WriteLine("按任意键退出");
             Console.ReadLine();
             forceStop = true;
@@ -45,9 +45,9 @@ namespace WebsocketServer
             client = await _client.AcceptTcpClientAsync();
             try
             {
-                while (client.Connected)
+                while (!token.IsCancellationRequested)
                 {
-                    if (_server.IsAvailable)
+                    if (_server.IsAvailable && !token.IsCancellationRequested)
                     {
                         int count;
                         var stream = client.GetStream();
@@ -118,11 +118,12 @@ namespace WebsocketServer
         {
             Console.WriteLine($"{DateTime.Now} Close WebSocket");
             client?.Close();
-            _receiveThread.Abort();
+            token.Cancel();
             if (!forceStop)
             {
-                _receiveThread = new Thread(ReceiveData);
-                _receiveThread.Start();
+                token = new CancellationTokenSource();
+                _receiveTask = new Task(ReceiveData,token.Token);
+                _receiveTask.Start();
             }
         }
 
