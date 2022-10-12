@@ -32,8 +32,6 @@ namespace WebsocketServer
             });
             _client = new TcpListener(IPAddress.Parse("0.0.0.0"), 56565);
             _client.Start();
-            _receiveTask = new Task(ReceiveData,token.Token);
-            _receiveTask.Start();
             Console.WriteLine("按任意键退出");
             Console.ReadLine();
             forceStop = true;
@@ -47,7 +45,7 @@ namespace WebsocketServer
             {
                 while (!token.IsCancellationRequested)
                 {
-                    if (_server.IsAvailable && !token.IsCancellationRequested)
+                    if (_server.IsAvailable)
                     {
                         int count;
                         var stream = client.GetStream();
@@ -117,19 +115,22 @@ namespace WebsocketServer
         private static void OnClose()
         {
             Console.WriteLine($"{DateTime.Now} Close WebSocket");
-            client?.Close();
             token.Cancel();
-            if (!forceStop)
-            {
-                token = new CancellationTokenSource();
-                _receiveTask = new Task(ReceiveData,token.Token);
-                _receiveTask.Start();
-            }
+            client?.Close();
+            //if (!forceStop)
+            //{
+            //    token = new CancellationTokenSource();
+            //    _receiveTask = new Task(ReceiveData, token.Token);
+            //    _receiveTask.Start();
+            //}
         }
 
         private static async void OnOpen()
         {
             Console.WriteLine($"{DateTime.Now} Open WebSocket");
+            token = new CancellationTokenSource();
+            _receiveTask = new Task(ReceiveData, token.Token);
+            _receiveTask.Start();
             //try
             //{
             //    await Task.Run(async () =>
