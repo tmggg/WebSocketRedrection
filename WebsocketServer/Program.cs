@@ -21,7 +21,7 @@ namespace WebsocketServer
         private static CancellationTokenSource token = new CancellationTokenSource();
         static void Main(string[] args)
         {
-            var server = new WebSocketServer("ws://127.0.0.1:8181");
+            var server = new WebSocketServer("ws://0.0.0.0:8181");
             server.Start(socket =>
             {
                 _server = socket;
@@ -29,8 +29,9 @@ namespace WebsocketServer
                 socket.OnClose = OnClose;
                 socket.OnMessage = OnMessage;
                 socket.OnBinary = OnBinary;
+                socket.OnError = OnError;
             });
-            _client = new TcpListener(IPAddress.Parse("0.0.0.0"), 56565);
+            _client = new TcpListener(IPAddress.Parse("127.0.0.1"), 56565);
             _client.Start();
             Console.WriteLine("按任意键退出");
             Console.ReadLine();
@@ -38,19 +39,24 @@ namespace WebsocketServer
             OnClose();
         }
 
+        private static void OnError(Exception obj)
+        {
+            throw new NotImplementedException();
+        }
+
         private static async void ReceiveData()
         {
-            client = await _client.AcceptTcpClientAsync();
             try
             {
+                client = await _client.AcceptTcpClientAsync();
                 while (!token.IsCancellationRequested)
                 {
                     if (_server.IsAvailable)
                     {
-                        int count;
-                        var stream = client.GetStream();
-                        lock (stream)
+                        if (client.Connected)
                         {
+                            int count;
+                            var stream = client.GetStream();
                             if (stream.DataAvailable)
                             {
                                 do
@@ -94,11 +100,9 @@ namespace WebsocketServer
                     var stream = client.GetStream();
                     if (stream.CanWrite)
                     {
-                        lock (stream)
-                        {
-                            stream.Write(obj, 0, obj.Length);
-                            Console.WriteLine($"Receive Data from Websocket: {DateTime.Now.ToString(CultureInfo.InvariantCulture)} Length: {obj.Length}");
-                        }
+                        stream.Write(obj, 0, obj.Length);
+                        Console.WriteLine(
+                            $"Receive Data from Websocket: {DateTime.Now.ToString(CultureInfo.InvariantCulture)} Length: {obj.Length}");
                     }
                 }
             }
@@ -117,12 +121,17 @@ namespace WebsocketServer
             Console.WriteLine($"{DateTime.Now} Close WebSocket");
             token.Cancel();
             client?.Close();
-            //if (!forceStop)
-            //{
-            //    token = new CancellationTokenSource();
-            //    _receiveTask = new Task(ReceiveData, token.Token);
-            //    _receiveTask.Start();
-            //}
+            _server.Close();
+            do
+            {
+                Thread.Sleep(1);
+            } while (!_receiveTask.IsCompleted);
+            if (!forceStop)
+            {
+                token = new CancellationTokenSource();
+                _receiveTask = new Task(ReceiveData, token.Token);
+                _receiveTask.Start();
+            }
         }
 
         private static async void OnOpen()
